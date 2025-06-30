@@ -1,0 +1,26 @@
+name: Trigger remote merge workflow
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  dispatch-merge:
+    if: startsWith(github.head_ref, 'update/steam_') && github.base_ref == 'database/steam'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger steam merge with PR info
+        run: |
+          curl -X POST https://api.github.com/repos/GameDumpers/steam_game_share/dispatches \
+            -H "Authorization: token ${{ secrets.REPO_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -d '{
+              "event_type": "merge_db",
+              "client_payload": {
+                "pr_number": ${{ github.event.pull_request.number }},
+                "pr_url": "${{ github.event.pull_request.html_url }}",
+                "branch": "${{ github.head_ref }}",
+                "repo": "${{ github.repository }}"
+              }
+            }'
